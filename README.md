@@ -1,2 +1,3 @@
 # health_chatbot
-RAG implementation, LLM and UI
+An interactive AI assistant , health chatbox will answer queries about certain health issues using RAG. This i built using FastAPI, FAISS, llama LLM model
+
