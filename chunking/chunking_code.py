@@ -58,7 +58,8 @@ def cleanData(inputCSV: str)->list[list[str]]:
         for line in reader:
             if line and line[0] != 'URL':
                 chunks=getChunks(line[2])
-                result.append([line[0], line[1], chunks])
+                for temp in chunks:
+                    result.append([line[0], line[1], temp])
             
     return result
 
