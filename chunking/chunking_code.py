@@ -5,14 +5,7 @@ import math
 nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
 
-# Create a directory explicitly if needed
-##os.makedirs(nltk_data_path, exist_ok=True)
 
-# Download punkt to that location
-#nltk.download('punkt', download_dir=nltk_data_path)
-
-# Tell NLTK where to look
-#nltk.data.path.append(nltk_data_path)
 
 nltk_data_path = "/home/ec2-user/nltk_data"
 nltk.data.path.insert(0, nltk_data_path)  # <--- this is the key line
@@ -73,7 +66,7 @@ def save_chunks_to_csv(chunks, out_file="chunks.csv"):
     with open(out_file, mode="a", newline='', encoding="utf-8") as f:
         writer = csv.writer(f)
         for idx, chunk in enumerate(chunks):
-            writer.writerow([chunk[0], chunk[1],idx, chunk])
+            writer.writerow([chunk[0], chunk[1],idx, chunk[2]])
 
 
 if __name__ == "__main__":
