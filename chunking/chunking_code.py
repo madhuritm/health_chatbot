@@ -18,6 +18,7 @@ inputCSV="../scraping/scraped_contents.csv"
 
 print("NLTK search paths:", nltk.data.path)
 
+
 def getChunks(text: str, chunk_size: int = 200, overlap: float=0.4)->list[str]:
     sentences=sent_tokenize(text)
     chunks=[]
@@ -53,13 +54,15 @@ def getChunks(text: str, chunk_size: int = 200, overlap: float=0.4)->list[str]:
 
 def cleanData(inputCSV: str)->list[list[str]]:
     result=[]
+    index = 0
     with open(inputCSV, newline='') as f:
         reader=csv.reader(f)
         for line in reader:
             if line and line[0] != 'URL':
                 chunks=getChunks(line[2])
                 for temp in chunks:
-                    result.append([line[0], line[1], temp])
+                    result.append([index, line[0], line[1], temp])
+                    index+=1
             
     return result
 
