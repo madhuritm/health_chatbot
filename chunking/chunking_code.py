@@ -69,8 +69,9 @@ def cleanData(inputCSV: str)->list[list[str]]:
 def save_chunks_to_csv(chunks, out_file="chunks.csv"):
     with open(out_file, mode="a", newline='', encoding="utf-8") as f:
         writer = csv.writer(f)
+        writer.writerow(["chunk_id", "chunk_url", "chunk_title", "chunk_text"])
         for idx, chunk in enumerate(chunks):
-            writer.writerow([chunk[0], chunk[1],idx, chunk[2]])
+            writer.writerow([chunk[0], chunk[1], chunk[2], chunk[3]])
 
 
 if __name__ == "__main__":
