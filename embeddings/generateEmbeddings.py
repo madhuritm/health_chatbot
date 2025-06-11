@@ -14,5 +14,4 @@ embeddings=model.encode(df['chunk_text'].tolist(), show_progress_bar=True)
 df['embedding'] =embeddings.tolist()
 
 #save the DataFrame and store it in a json file
-df_to_save=df[['chunk_id', 'chunk_text','embedding' ]]
-df_to_save.to_json("chunks_with_embeddings.json", orient='records', lines=True)
+df.to_json("chunks_with_embeddings.json", orient='records', lines=True)
