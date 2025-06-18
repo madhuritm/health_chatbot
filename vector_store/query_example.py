@@ -8,7 +8,7 @@ index=faiss.read_index("../index/diabetes_index.index")
 df=pd.read_json("../data/chunks_with_embeddings.json", lines=True)
 metadatas=df[['chunk_id', 'chunk_url', 'chunk_title','chunk_text']]
 
-query="What are the symptoms of type1 diabetes?"
+query="What are the symptoms of type 2 diabetes?"
 query_embedding=model.encode([query], convert_to_numpy=True).astype('float32')
 
 D,I=index.search(query_embedding, k=3)
@@ -27,7 +27,13 @@ print("Top K Chunks:\n", top_k_chunks)
 
 llm=Llama(model_path="../llama.cpp/models/llama-2-7b-chat.Q4_K_M.gguf",  n_ctx=4096)
 
-output=llm("Context: " + top_k_chunks + "\n\nQuestion: " + query , max_tokens=150,  stop=["\n\n", "\nQuestion:", "Question:", "</s>"] )    # Optional: stops when it sees end-of-sequence)
+#output=llm("Context: " + top_k_chunks + "\n\nQuestion: " + query , max_tokens=150,  stop=["\n\n", "\nQuestion:", "Question:", "</s>"] )    # Optional: stops when it sees end-of-sequence)
+
+output = llm.create_completion(
+    prompt="Context: " + top_k_chunks + "\n\nQuestion: " + query,
+    max_tokens=300,
+    stop=["\n\n", "\nQuestion:", "Question:", "</s>"]
+)
 print(output["choices"][0]["text"])
 
 import re

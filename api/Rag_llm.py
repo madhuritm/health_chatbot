@@ -33,7 +33,13 @@ def ask(question:Question):
 
     top_chunks="\n\n".join(chunks_df.iloc[idx]['chunk_text'] for idx in I[0])
 
-    output=llm("Context: " + top_chunks + "\n\nQuestion: " + question.query , max_tokens=300,  stop=["\n\n", "\nQuestion:", "Question:", "</s>"] )
+   # output=llm("Context: " + top_chunks + "\n\nQuestion: " + question.query , max_tokens=300,  stop=["\n\n", "\nQuestion:", "Question:", "</s>"] )
+
+    output = llm.create_completion(
+    prompt="Context: " + top_chunks + "\n\nQuestion: " + question.query,
+    max_tokens=300,
+    stop=["\n\n", "\nQuestion:", "Question:", "</s>"]
+)
 
     answer = output["choices"][0]["text"]
     answer = re.split(r"\n[A-Z][^:]*:", answer)[0]  # split at headings
