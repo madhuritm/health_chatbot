@@ -38,6 +38,8 @@ def ask(question:Question):
     output = llm.create_completion(
     prompt="Context: " + top_chunks + "\n\nQuestion: " + question.query,
     max_tokens=300,
+    temperature=0,
+    top_p=1,
     stop=["\n\n", "\nQuestion:", "Question:", "</s>"]
 )
 

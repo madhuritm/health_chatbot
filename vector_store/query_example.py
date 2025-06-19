@@ -29,9 +29,22 @@ llm=Llama(model_path="../llama.cpp/models/llama-2-7b-chat.Q4_K_M.gguf",  n_ctx=4
 
 #output=llm("Context: " + top_k_chunks + "\n\nQuestion: " + query , max_tokens=150,  stop=["\n\n", "\nQuestion:", "Question:", "</s>"] )    # Optional: stops when it sees end-of-sequence)
 
+prompt = f"""<s>[INST] <<SYS>>
+You are a helpful medical assistant.
+<</SYS>>
+
+Context:
+{top_k_chunks}
+
+Question: {query}
+[/INST]
+"""
+
 output = llm.create_completion(
-    prompt="Context: " + top_k_chunks + "\n\nQuestion: " + query,
-    max_tokens=300,
+    prompt=prompt,
+    max_tokens=500,
+    temperature=0,
+    top_p=1,
     stop=["\n\n", "\nQuestion:", "Question:", "</s>"]
 )
 print(output["choices"][0]["text"])
