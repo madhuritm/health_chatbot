@@ -1,0 +1,3 @@
+define flow
+    when user says "hello" or "hi":
+        bot says "Hello how can I assist you today?"
