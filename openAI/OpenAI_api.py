@@ -4,12 +4,16 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import pandas as pd
 import faiss
+import os
 
+api_key = os.getenv("OPENAI_API_KEY")
 
 #to load.env
-load_dotenv()
+#load_dotenv()
 
-client=OpenAI()
+
+
+client=OpenAI(api_key=api_key)
 
 #read the diabetes index that has been created (FAISS index helps to do a very quick semantic search for the query embedding by using optimized DS)
 index=faiss.read_index("../index/diabetes_index.index")
@@ -27,6 +31,13 @@ D,I=index.search(query_embedding, k=3)
 
 print(I)
 print(D)
+
+source_url=[
+    {
+        "url":metadatas.iloc[idx]['chunk_url']
+    }
+    for idx in I[0]
+]
 
 for idx in I[0]:
     print(metadatas[metadatas['chunk_id'] == int(idx)]['chunk_text'].values[0])
@@ -50,9 +61,12 @@ response=client.chat.completions.create(
 
 answer = response.choices[0].message.content
 
-
 if not answer:
     answer = "We don't have an answer to that question yet."
-print(f"answer:{answer}")
+
+answer=answer + "\n" + "sources"
+output=answer+"\n"+"\n".join(idx["url"] for idx in source_url)
+
+print(f"answer:{output}")
 
 print("Done!")
