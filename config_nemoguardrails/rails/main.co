@@ -1,3 +1,12 @@
 define flow
     when user says "hello" or "hi":
         bot says "Hello how can I assist you today?"
+    
+    when user says _sensitive_emergency:
+        bot says "I'm here to help. Can you tell me more about what's going on?"
+    
+    when user says _restricted_question:
+        bot says "I'm not qualified to answer that. Please consult a medical professional"
+    
+    otherwise:
+        bot says _llm_response

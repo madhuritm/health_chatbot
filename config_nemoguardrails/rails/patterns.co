@@ -1,0 +1,16 @@
+define pattern _sensitive_emergency
+    match "urgent"
+    match "emergency"
+    match "help now"
+    match "am I dying?"
+    match "suicidal"
+
+define pattern _restricted_question
+    match "dosage"
+    match "prescribe"
+    match "how much should I take"
+    match "increase/decrease medication"
+    match "do I have"
+    match "diagnose"
+    match "can I stop taking"
+    
