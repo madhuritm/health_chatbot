@@ -11,8 +11,6 @@ api_key = os.getenv("OPENAI_API_KEY")
 #to load.env
 #load_dotenv()
 
-
-
 client=OpenAI(api_key=api_key)
 
 #read the diabetes index that has been created (FAISS index helps to do a very quick semantic search for the query embedding by using optimized DS)
@@ -23,7 +21,7 @@ df=pd.read_json("../data/chunks_with_embeddings.json", lines=True)
 metadatas=df[['chunk_id', 'chunk_url', 'chunk_title','chunk_text']]
 
 #create embedding from query
-query="How can I prevent high blood sugar?"
+query="what are the symptoms of migraine?"
 query_embedding=model.encode([query], convert_to_numpy=True).astype('float32')
 
 #get the closest 3 embeddings
@@ -52,7 +50,7 @@ top_k_chunks = "\n\n".join(metadatas.iloc[idx]['chunk_text'] for idx in top_k_in
 response=client.chat.completions.create(
     model="gpt-3.5-turbo",
     messages=[
-        {"role":"system", "content":"You are a safe and helpful chatbot. Use only the context to answer in not more than 100 words"},
+        {"role":"system", "content":"You are a safe and helpful chatbot. If the answer is not in the context, say 'I don’t know based on the provided information. Use only the context to answer in not more than 100 words"},
         {"role":"system", "content":f"Context:\n{top_k_chunks}"},
         {"role":"user", "content":query}
     ]
@@ -61,12 +59,14 @@ response=client.chat.completions.create(
 
 answer = response.choices[0].message.content
 
-if not answer:
-    answer = "We don't have an answer to that question yet."
-
-answer=answer + "\n" + "sources"
-output=answer+"\n"+"\n".join(idx["url"] for idx in source_url)
+if answer == "I don’t know based on the provided information.":    
+    output=answer
+else:
+    answer=answer + "\n" + "sources"
+    output=answer+"\n"+"\n".join(idx["url"] for idx in source_url)
 
 print(f"answer:{output}")
 
 print("Done!")
+
+###1.consider having a cut off for distance - like above 1.0 don't consider the chunk 2. use a better embedding model 3. prefilter based on topic
