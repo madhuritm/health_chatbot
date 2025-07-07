@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from uuid import uuid4
 from typing import Optional
+from sklearn.metrics.pairwise import cosine_similarity
 from config import client,index,chunks_df,embedder
 import spacy
 
@@ -11,6 +12,11 @@ app=FastAPI()
 sessions={}
 nlp=spacy.load("en_core_web_sm")
 
+def cal_cosine_similarity(context:str, answer:str)->float:
+    context_embedding=embedder.encode(context)
+    answer_embedding=embedder.encode(answer)
+    sim=cosine_similarity([context_embedding], [answer_embedding])
+    return sim[0][0]
 
 def extract_entities(text):
     doc=nlp(text)
@@ -62,7 +68,11 @@ def ask(question: Question):
     answer=get_llm_response(history, question.query, top_k_chunks)
     history.append({"role":"assistant", "content":answer})    
     sessions[question.session_id]=history
+    sim=cal_cosine_similarity(top_k_chunks, answer)
 
-    return{"answer":answer, "sources":source_url}
+    if sim < 0.5:
+        return{"answer":"At this point we don't have an answer", "source":""}
+    else:
+        return{"answer":answer, "sources":source_url}
 
     

@@ -1,89 +1,47 @@
-from sentence_transformers import SentenceTransformer
-model=SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-from openai import OpenAI
-from dotenv import load_dotenv
 import pandas as pd
-import faiss
 import os
+from sklearn.metrics.pairwise import cosine_similarity
+from config import client, index, chunks_df, embedder
+
 
 api_key = os.getenv("OPENAI_API_KEY")
 
-#to load.env
-#load_dotenv()
+def extract_k_chunks(query:str, ) -> tuple[str, list[dict]]:
+    query_embedding=embedder.encode([query], convert_to_numpy=True).astype('float32')
+    #get the closest 3 embeddings
+    D,I=index.search(query_embedding, k=3)
+    source_url=[{"url":chunks_df.iloc[idx]['chunk_url']}for idx in I[0]]
+    #create a chunk of the closest emebddings
+    top_k_indices=I[0]
+    top_k_chunks = "\n\n".join(chunks_df.iloc[idx]['chunk_text'] for idx in top_k_indices)
+    return [top_k_chunks, source_url]
 
-client=OpenAI(api_key=api_key)
-
-
-import spacy
-
-# Load spaCy's small English model
-nlp = spacy.load("en_core_web_sm")
-
-def extract_entities(text):
-    doc = nlp(text)
-    return set(ent.text.lower() for ent in doc.ents)
-
-
-def detect_hallucinated_entities(answer, context):
-    answer_entities = extract_entities(answer)
-    context_entities = extract_entities(context)
-
-    hallucinated = answer_entities - context_entities
-    return hallucinated
-
-
-#read the diabetes index that has been created (FAISS index helps to do a very quick semantic search for the query embedding by using optimized DS)
-index=faiss.read_index("../index/diabetes_index.index")
-
-#load the embeddings and stored related metadata 
-df=pd.read_json("../data/chunks_with_embeddings.json", lines=True)
-metadatas=df[['chunk_id', 'chunk_url', 'chunk_title','chunk_text']]
-
-#create embedding from query
-query="what is a doctor who treats diabetes called?"
-query_embedding=model.encode([query], convert_to_numpy=True).astype('float32')
-
-#get the closest 3 embeddings
-D,I=index.search(query_embedding, k=3)
-
-print(I)
-print(D)
-
-source_url=[
-    {
-        "url":metadatas.iloc[idx]['chunk_url']
-    }
-    for idx in I[0]
-]
-
-for idx in I[0]:
-    print(metadatas[metadatas['chunk_id'] == int(idx)]['chunk_text'].values[0])
-    print("-" * 40)
-
-
-#create a chunk of the closest emebddings
-top_k_indices=I[0]
-top_k_chunks = "\n\n".join(metadatas.iloc[idx]['chunk_text'] for idx in top_k_indices)
-
-#send query to openAI
-response=client.chat.completions.create(
+def get_llm_response(query:str, top_k_chunks:str)->str:
+    #send query to openAI
+    response=client.chat.completions.create(
     model="gpt-3.5-turbo",
     messages=[
         {"role":"system", "content":"You are a safe and helpful chatbot. If the answer is not in the context, say 'I don’t know based on the provided information. Use only the context to answer in not more than 100 words"},
         {"role":"system", "content":f"Context:\n{top_k_chunks}"},
         {"role":"user", "content":query}
-    ]
-)
+    ])
+    return response.choices[0].message.content
+
+def cal_cosine_similarity(top_k_chunks:str, answer:str)->float:
+    chunk_embedding=embedder.encode(top_k_chunks)
+    answer_embedding=embedder.encode(answer)
+    sims=cosine_similarity([chunk_embedding], [answer_embedding])
+    return sims
 
 
-answer = response.choices[0].message.content
+#create embedding from query
+query="what is migraine?"
+[top_k_chunks,source_url] = extract_k_chunks(query)
+answer=get_llm_response(query, top_k_chunks)
 
-hallucinations=detect_hallucinated_entities(answer, top_k_chunks)
+sims=cal_cosine_similarity(top_k_chunks, answer)
 
-if hallucinations:
-    print("hallucinating", hallucinations)
-else:
-    print("all entities are grounded in the context")
+print(sims[0][0])
 
 
 if answer == "I don’t know based on the provided information.":    
@@ -94,10 +52,4 @@ else:
 
 print(f"answer:{output}")
 
-
-
-
-
 print("Done!")
-
-###1.consider having a cut off for distance - like above 1.0 don't consider the chunk 2. use a better embedding model 3. prefilter based on topic
