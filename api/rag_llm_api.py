@@ -4,11 +4,27 @@ from pydantic import BaseModel
 from uuid import uuid4
 from typing import Optional
 from config import client,index,chunks_df,embedder
+import spacy
 
 #set up fast api
 app=FastAPI()
 sessions={}
+nlp=spacy.load("en_core_web_sm")
 
+
+def extract_entities(text):
+    doc=nlp(text)
+    return set(ent.text.lower() for ent in doc.ents)
+
+def detect_hallucinated_entities(answer, context):
+    answer_entities=extract_entities(answer)
+    context_entities=extract_entities(context)
+
+    hallucinated=answer_entities-context_entities
+    return hallucinated
+
+
+#this function extracts k closest chunks to the query from the embedding
 def extract_k_chunks(query:str)-> tuple[str, list[dict]]:
     query_embedding=embedder.encode([query]).astype('float32')
     D,I=index.search(query_embedding, k=3)
@@ -16,6 +32,7 @@ def extract_k_chunks(query:str)-> tuple[str, list[dict]]:
     top_k_chunks="\n\n".join(chunks_df.iloc[idx]['chunk_text'] for idx in I[0])
     return [top_k_chunks, source_url]
 
+#gets the llm response
 def get_llm_response(history:list[dict], query:str, top_k_chunks:str) -> str:
     history.append({"role":"user", "content":query})
     system_prompt={"role":"system", "content":"You are a safe and helpful chatbot. If answer is not in the context, say 'I don't know based on the provided information'. Use current context to answer in not more than 100 words"}
