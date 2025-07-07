@@ -13,6 +13,25 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 client=OpenAI(api_key=api_key)
 
+
+import spacy
+
+# Load spaCy's small English model
+nlp = spacy.load("en_core_web_sm")
+
+def extract_entities(text):
+    doc = nlp(text)
+    return set(ent.text.lower() for ent in doc.ents)
+
+
+def detect_hallucinated_entities(answer, context):
+    answer_entities = extract_entities(answer)
+    context_entities = extract_entities(context)
+
+    hallucinated = answer_entities - context_entities
+    return hallucinated
+
+
 #read the diabetes index that has been created (FAISS index helps to do a very quick semantic search for the query embedding by using optimized DS)
 index=faiss.read_index("../index/diabetes_index.index")
 
@@ -21,7 +40,7 @@ df=pd.read_json("../data/chunks_with_embeddings.json", lines=True)
 metadatas=df[['chunk_id', 'chunk_url', 'chunk_title','chunk_text']]
 
 #create embedding from query
-query="what are the symptoms of migraine?"
+query="what is a doctor who treats diabetes called?"
 query_embedding=model.encode([query], convert_to_numpy=True).astype('float32')
 
 #get the closest 3 embeddings
@@ -59,6 +78,14 @@ response=client.chat.completions.create(
 
 answer = response.choices[0].message.content
 
+hallucinations=detect_hallucinated_entities(answer, top_k_chunks)
+
+if hallucinations:
+    print("hallucinating", hallucinations)
+else:
+    print("all entities are grounded in the context")
+
+
 if answer == "I don’t know based on the provided information.":    
     output=answer
 else:
@@ -66,6 +93,10 @@ else:
     output=answer+"\n"+"\n".join(idx["url"] for idx in source_url)
 
 print(f"answer:{output}")
+
+
+
+
 
 print("Done!")
 
