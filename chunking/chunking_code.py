@@ -1,19 +1,19 @@
-import csv
-import nltk
-import os
-import math
+import csv, nltk, argparse
 nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
 
 
+
+import nltk
+nltk.data.path.append('/home/ec2-user/nltk_data')
+nltk.download('punkt', download_dir='/home/ec2-user/nltk_data')
+nltk.download('punkt_tab', download_dir='/home/ec2-user/nltk_data')
 
 nltk_data_path = "/home/ec2-user/nltk_data"
 nltk.data.path.insert(0, nltk_data_path)  # <--- this is the key line
 
 # Just for safety, ensure it's downloaded
 nltk.download('punkt', download_dir=nltk_data_path, quiet=True)
-
-inputCSV="../scraping/scraped_contents.csv"
 
 
 print("NLTK search paths:", nltk.data.path)
@@ -52,10 +52,10 @@ def getChunks(text: str, chunk_size: int = 200, overlap: float=0.4)->list[str]:
         i=i-round(overlap*len(current_chunk))
     return chunks
 
-def cleanData(inputCSV: str)->list[list[str]]:
+def cleanData(input_file: str)->list[list[str]]:
     result=[]
     index = 0
-    with open(inputCSV, newline='') as f:
+    with open(input_file, newline='') as f:
         reader=csv.reader(f)
         for line in reader:
             if line and line[0] != 'URL':
@@ -75,9 +75,15 @@ def save_chunks_to_csv(chunks, out_file="chunks.csv"):
 
 
 if __name__ == "__main__":
-    resultChunks=cleanData(inputCSV)
-    save_chunks_to_csv(resultChunks, out_file="chunks.csv")    
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--input_file", required=True)
+    ap.add_argument("--output_file", required=True)
+    args = ap.parse_args()
 
-    
+    input_file = args.input_file
+    output_file = args.output_file
+
+    resultChunks=cleanData(input_file)
+    save_chunks_to_csv(resultChunks, output_file)      
 
     print(f"Completed successfully")

@@ -1,11 +1,8 @@
 from bs4 import BeautifulSoup
-import requests
+import requests, argparse
 from urllib.parse import urlparse, urljoin
 from collections import deque
 import csv
-
-fileWithLinks="diabetes_recursive_links.txt"
-csvWithContent="scraped_contents.csv"
 
 
 def scraper(inputURL:str)->list[str]:
@@ -65,8 +62,16 @@ def scraping(inputFile:str)->list[list[str]]:
 
 
 if __name__ == "__main__":
-    result=scraping(fileWithLinks)
-    with open(csvWithContent, "w", newline='',encoding="utf-8") as f:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--input_file", required=True)
+    ap.add_argument("--output_file", required=True)
+    args = ap.parse_args()
+    input_file = args.input_file
+    output_file = args.output_file
+
+    result=scraping(input_file)
+
+    with open(output_file, "w", newline='',encoding="utf-8") as f:
         writer=csv.writer(f, quoting=csv.QUOTE_ALL)
         writer.writerow(["URL", "Title", "Content"])
         writer.writerows(result)
